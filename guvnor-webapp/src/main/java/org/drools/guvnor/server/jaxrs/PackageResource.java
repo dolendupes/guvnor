@@ -776,7 +776,33 @@ public class PackageResource extends Resource {
         } catch (Exception e) {
             throw new WebApplicationException(e);
         }
-    }    
+    }
+    
+    @GET
+    @Path("{packageName}/assets/{assetName}/versions")
+    @Produces({MediaType.APPLICATION_JSON,MediaType.APPLICATION_XML})
+    public Collection<Asset> getAssetVersionsAsJAXB(@PathParam("packageName") String packageName, 
+                                       @PathParam("assetName") String assetName) {
+        try {
+            //Throws RulesRepositoryException if the package or asset does not exist
+            final AssetItem asset = repository.loadPackage(packageName).loadAsset(assetName);
+            
+            final Collection<Asset> _ret = new ArrayList<Asset>();
+            
+            //Iterate over the history of asset items and build assets
+            AssetHistoryIterator it = asset.getHistory();
+            while (it.hasNext()) {
+                final AssetItem historicalAsset = it.next();
+                if (historicalAsset.getVersionNumber() != 0) {
+                    final Asset version = toAsset(historicalAsset, uriInfo);
+                    _ret.add(version);
+                }
+            }
+            return _ret;
+        } catch (Exception e) {
+            throw new WebApplicationException(e);
+        }
+    }
 
     @GET
     @Path("{packageName}/assets/{assetName}/versions/{versionNumber}")
